@@ -1,7 +1,31 @@
 version: '3.8'
 
 services:
-
+  # 新增 GaussDB 服务
+  gaussdb:
+    image: enmotech/opengauss-lite:latest  # 或 enmotech/opengauss-lite:latest (更适合 Mac)
+    container_name: gaussdb
+    restart: unless-stopped
+    privileged: true
+    environment:
+      TZ: Asia/Shanghai
+      GS_PASSWORD: Gaussdb!123456  # 必须包含大写字母、小写字母、数字和特殊字符
+      GS_USERNAME: gaussdb         # 可选，默认为 gaussdb
+      GS_NODENAME: gaussdb         # 可选，默认为 gaussdb
+      GS_PORT: 5432                # 可选，默认为 5432
+    volumes:
+      - gaussdb_data:/var/lib/opengauss/data
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "5433:5432"  # 主机端口 5433 映射到容器端口 5432（避免与 MySQL 的 3306 冲突）
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "gaussdb", "-d", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - common-app-net
   mysql:
     image: mysql:8.0.34
     container_name: mysql
@@ -192,6 +216,7 @@ volumes:
   zookeeper_data:
   zookeeper_log:
   kafka_data:
+  gaussdb_data:
 
 networks:
   common-app-net:
