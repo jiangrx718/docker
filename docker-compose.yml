@@ -207,6 +207,20 @@ services:
       retries: 5
     networks:
       - common-app-net
+  
+  minio:
+    image: minio/minio:latest
+    container_name: minio-server
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=123456!@#$%
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
 
 volumes:
   mysql_data:
@@ -217,6 +231,7 @@ volumes:
   zookeeper_log:
   kafka_data:
   gaussdb_data:
+  minio-data:
 
 networks:
   common-app-net:
