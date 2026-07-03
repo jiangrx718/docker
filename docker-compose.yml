@@ -222,6 +222,30 @@ services:
     command: server /data --console-address ":9001"
     restart: unless-stopped
 
+  mongo:
+    image: mongo:7.0  # 可指定版本，如 6.0、5.0 等
+    container_name: mongo
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+      MONGO_INITDB_ROOT_USERNAME: root      # 超级管理员用户名
+      MONGO_INITDB_ROOT_PASSWORD: 123456    # 设置你的密码
+      # 可选：初始化数据库名（首次启动时自动创建）
+      # MONGO_INITDB_DATABASE: myapp
+    volumes:
+      - mongo_data:/data/db                # 数据持久化
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "27017:27017"                      # 默认端口，主机映射不变
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - common-app-net
+
 volumes:
   mysql_data:
   redis_data:
@@ -232,6 +256,7 @@ volumes:
   kafka_data:
   gaussdb_data:
   minio-data:
+  mongo_data:
 
 networks:
   common-app-net:
