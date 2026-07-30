@@ -288,8 +288,10 @@ services:
       retries: 3
 
   # Milvus 核心服务
+  # 注意：eino-ext 的 milvus 组件依赖 milvus-sdk-go v2.4.x，
+  # 仅兼容 Milvus 2.4.x。若升级到 2.5/2.6，需改用 eino-ext 的 milvus2 包（要求 go>=1.24）。
   milvus:
-    image: milvusdb/milvus:v2.6.20
+    image: milvusdb/milvus:v2.4.13
     container_name: milvus-standalone
     depends_on:
       etcd:
