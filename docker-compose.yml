@@ -1,31 +1,6 @@
 version: '3.8'
 
 services:
-  # 新增 GaussDB 服务
-  gaussdb:
-    image: enmotech/opengauss-lite:latest  # 或 enmotech/opengauss-lite:latest (更适合 Mac)
-    container_name: gaussdb
-    restart: unless-stopped
-    privileged: true
-    environment:
-      TZ: Asia/Shanghai
-      GS_PASSWORD: Gaussdb!123456  # 必须包含大写字母、小写字母、数字和特殊字符
-      GS_USERNAME: gaussdb         # 可选，默认为 gaussdb
-      GS_NODENAME: gaussdb         # 可选，默认为 gaussdb
-      GS_PORT: 5432                # 可选，默认为 5432
-    volumes:
-      - gaussdb_data:/var/lib/opengauss/data
-      - /etc/localtime:/etc/localtime:ro
-    ports:
-      - "5433:5432"  # 主机端口 5433 映射到容器端口 5432（避免与 MySQL 的 3306 冲突）
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "gaussdb", "-d", "postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    networks:
-      - common-app-net
   mysql:
     image: mysql:8.0.34
     container_name: mysql
@@ -62,189 +37,200 @@ services:
     networks:
       - common-app-net
 
-  nginx:
-    image: nginx:alpine
-    container_name: nginx
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d
-    networks:
-      - common-app-net
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: nginx
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./nginx/conf.d:/etc/nginx/conf.d
+  #   networks:
+  #     - common-app-net
 
-  elasticsearch:
-    image: elasticsearch:7.1.1
-    container_name: elasticsearch
-    environment:
-      - discovery.type=single-node
-      - bootstrap.memory_lock=true
-      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
-      - TZ=Asia/Shanghai
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-    volumes:
-      - es_data:/usr/share/elasticsearch/data
-    ports:
-      - "9200:9200"
-      - "9300:9300"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cat/health || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks:
-      - common-app-net
+  # gaussdb:
+  #   image: enmotech/opengauss-lite:latest  # 或 enmotech/opengauss-lite:latest (更适合 Mac)
+  #   container_name: gaussdb
+  #   restart: unless-stopped
+  #   privileged: true
+  #   environment:
+  #     TZ: Asia/Shanghai
+  #     GS_PASSWORD: Gaussdb!123456  # 必须包含大写字母、小写字母、数字和特殊字符
+  #     GS_USERNAME: gaussdb         # 可选，默认为 gaussdb
+  #     GS_NODENAME: gaussdb         # 可选，默认为 gaussdb
+  #     GS_PORT: 5432                # 可选，默认为 5432
+  #   volumes:
+  #     - gaussdb_data:/var/lib/opengauss/data
+  #     - /etc/localtime:/etc/localtime:ro
+  #   ports:
+  #     - "5433:5432"  # 主机端口 5433 映射到容器端口 5432（避免与 MySQL 的 3306 冲突）
+  #   healthcheck:
+  #     test: ["CMD", "pg_isready", "-U", "gaussdb", "-d", "postgres"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 30s
+  #   networks:
+  #     - common-app-net
+
+  # elasticsearch:
+  #   image: elasticsearch:7.1.1
+  #   container_name: elasticsearch
+  #   environment:
+  #     - discovery.type=single-node
+  #     - bootstrap.memory_lock=true
+  #     - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+  #     - TZ=Asia/Shanghai
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #   volumes:
+  #     - es_data:/usr/share/elasticsearch/data
+  #   ports:
+  #     - "9200:9200"
+  #     - "9300:9300"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "curl -f http://localhost:9200/_cat/health || exit 1"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 10
+  #   networks:
+  #     - common-app-net
   
-  kibana:
-    image: kibana:7.1.1
-    container_name: kibana
-    environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200  # 连接到elasticsearch服务
-      - TZ=Asia/Shanghai
-    ports:
-      - "5601:5601"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks:
-      - common-app-net
+  # kibana:
+  #   image: kibana:7.1.1
+  #   container_name: kibana
+  #   environment:
+  #     - ELASTICSEARCH_HOSTS=http://elasticsearch:9200  # 连接到elasticsearch服务
+  #     - TZ=Asia/Shanghai
+  #   ports:
+  #     - "5601:5601"
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 10
+  #   networks:
+  #     - common-app-net
 
-  logstash:
-    image: logstash:7.1.1
-    container_name: logstash
-    hostname: logstash
-    restart: always
-    environment:
-      - TZ=Asia/Shanghai
-    ports:
-      - "9600:9600"   
-      - "5044:5044"
-    volumes:
-      # 挂载配置文件和JDBC驱动
-      - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
-      - ./logstash/conf.d/:/usr/share/logstash/conf.d/
-      - ./logstash/mysql-connector-j-8.0.31.jar:/usr/share/logstash/logstash-core/lib/jars/mysql-connector-j-8.0.31.jar
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9600"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks:
-      - common-app-net
+  # logstash:
+  #   image: logstash:7.1.1
+  #   container_name: logstash
+  #   hostname: logstash
+  #   restart: always
+  #   environment:
+  #     - TZ=Asia/Shanghai
+  #   ports:
+  #     - "9600:9600"   
+  #     - "5044:5044"
+  #   volumes:
+  #     # 挂载配置文件和JDBC驱动
+  #     - ./logstash/logstash.yml:/usr/share/logstash/config/logstash.yml
+  #     - ./logstash/conf.d/:/usr/share/logstash/conf.d/
+  #     - ./logstash/mysql-connector-j-8.0.31.jar:/usr/share/logstash/logstash-core/lib/jars/mysql-connector-j-8.0.31.jar
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:9600"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 10
+  #   networks:
+  #     - common-app-net
 
-  rabbitmq:
-    image: rabbitmq:3.12-management  # 使用带管理插件的版本
-    container_name: rabbitmq
-    environment:
-      - RABBITMQ_DEFAULT_USER=guest      # 默认用户名
-      - RABBITMQ_DEFAULT_PASS=guest      # 默认密码
-      - TZ=Asia/Shanghai                 # 时区
-    ports:
-      - "5672:5672"     # AMQP 协议端口
-      - "15672:15672"   # 管理界面端口
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq  # 持久化数据
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-    networks:
-      - common-app-net
+  # rabbitmq:
+  #   image: rabbitmq:3.12-management  # 使用带管理插件的版本
+  #   container_name: rabbitmq
+  #   environment:
+  #     - RABBITMQ_DEFAULT_USER=guest      # 默认用户名
+  #     - RABBITMQ_DEFAULT_PASS=guest      # 默认密码
+  #     - TZ=Asia/Shanghai                 # 时区
+  #   ports:
+  #     - "5672:5672"     # AMQP 协议端口
+  #     - "15672:15672"   # 管理界面端口
+  #   volumes:
+  #     - rabbitmq_data:/var/lib/rabbitmq  # 持久化数据
+  #   healthcheck:
+  #     test: ["CMD", "rabbitmq-diagnostics", "ping"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 10
+  #   networks:
+  #     - common-app-net
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.4.0
-    container_name: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-      ZOOKEEPER_SYNC_LIMIT: 2
-      TZ: Asia/Shanghai
-    ports:
-      - "2181:2181"
-    volumes:
-      - zookeeper_data:/var/lib/zookeeper/data
-      - zookeeper_log:/var/lib/zookeeper/log
-    healthcheck:
-      test: ["CMD", "zkOk.sh", "127.0.0.1:2181"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - common-app-net
+  # zookeeper:
+  #   image: confluentinc/cp-zookeeper:7.4.0
+  #   container_name: zookeeper
+  #   environment:
+  #     ZOOKEEPER_CLIENT_PORT: 2181
+  #     ZOOKEEPER_TICK_TIME: 2000
+  #     ZOOKEEPER_SYNC_LIMIT: 2
+  #     TZ: Asia/Shanghai
+  #   ports:
+  #     - "2181:2181"
+  #   volumes:
+  #     - zookeeper_data:/var/lib/zookeeper/data
+  #     - zookeeper_log:/var/lib/zookeeper/log
+  #   healthcheck:
+  #     test: ["CMD", "zkOk.sh", "127.0.0.1:2181"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - common-app-net
   
-  kafka:
-    image: confluentinc/cp-kafka:7.4.0
-    container_name: kafka
-    depends_on:
-      - zookeeper
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_LOG_RETENTION_HOURS: 168
-      TZ: Asia/Shanghai
-    ports:
-      - "9092:9092"
-      - "29092:29092"
-    volumes:
-      - kafka_data:/var/lib/kafka/data
-    healthcheck:
-      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - common-app-net
-  
-  minio:
-    image: minio/minio:latest
-    container_name: minio-server
-    environment:
-      - MINIO_ROOT_USER=admin
-      - MINIO_ROOT_PASSWORD=12345678
-    volumes:
-      - minio-data:/data
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    command: server /data --console-address ":9001"
-    restart: unless-stopped
+  # kafka:
+  #   image: confluentinc/cp-kafka:7.4.0
+  #   container_name: kafka
+  #   depends_on:
+  #     - zookeeper
+  #   environment:
+  #     KAFKA_BROKER_ID: 1
+  #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+  #     KAFKA_LISTENERS: PLAINTEXT://:9092,PLAINTEXT_HOST://:29092
+  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+  #     KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  #     KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+  #     KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+  #     KAFKA_LOG_RETENTION_HOURS: 168
+  #     TZ: Asia/Shanghai
+  #   ports:
+  #     - "9092:9092"
+  #     - "29092:29092"
+  #   volumes:
+  #     - kafka_data:/var/lib/kafka/data
+  #   healthcheck:
+  #     test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #   networks:
+  #     - common-app-net
 
-  mongo:
-    image: mongo:7.0  # 可指定版本，如 6.0、5.0 等
-    container_name: mongo
-    restart: unless-stopped
-    environment:
-      TZ: Asia/Shanghai
-      MONGO_INITDB_ROOT_USERNAME: root      # 超级管理员用户名
-      MONGO_INITDB_ROOT_PASSWORD: 123456    # 设置你的密码
-      # 可选：初始化数据库名（首次启动时自动创建）
-      # MONGO_INITDB_DATABASE: myapp
-    volumes:
-      - mongo_data:/data/db                # 数据持久化
-      - /etc/localtime:/etc/localtime:ro
-    ports:
-      - "27017:27017"                      # 默认端口，主机映射不变
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-    networks:
-      - common-app-net
+  # mongo:
+  #   image: mongo:7.0  # 可指定版本，如 6.0、5.0 等
+  #   container_name: mongo
+  #   restart: unless-stopped
+  #   environment:
+  #     TZ: Asia/Shanghai
+  #     MONGO_INITDB_ROOT_USERNAME: root      # 超级管理员用户名
+  #     MONGO_INITDB_ROOT_PASSWORD: 123456    # 设置你的密码
+  #     # 可选：初始化数据库名（首次启动时自动创建）
+  #     # MONGO_INITDB_DATABASE: myapp
+  #   volumes:
+  #     - mongo_data:/data/db                # 数据持久化
+  #     - /etc/localtime:/etc/localtime:ro
+  #   ports:
+  #     - "27017:27017"                      # 默认端口，主机映射不变
+  #   healthcheck:
+  #     test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+  #     interval: 10s
+  #     timeout: 5s
+  #     retries: 5
+  #     start_period: 30s
+  #   networks:
+  #     - common-app-net
 
   chroma:
     image: chromadb/chroma:latest
@@ -265,18 +251,94 @@ services:
     networks:
       - common-app-net
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio-server
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=12345678
+    volumes:
+      - minio-data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    command: server /data --console-address ":9001"
+    restart: unless-stopped
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.18
+    container_name: milvus-etcd
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+      - TZ=Asia/Shanghai
+    volumes:
+      - etcd_data:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+    ports:
+      - "2379:2379"
+    networks:
+      - common-app-net
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Milvus 核心服务
+  milvus:
+    image: milvusdb/milvus:v2.6.20
+    container_name: milvus-standalone
+    depends_on:
+      etcd:
+        condition: service_healthy
+      # 注意：依赖你已有的 minio 服务
+      minio:
+        condition: service_started
+    environment:
+      # etcd 配置
+      ETCD_ENDPOINTS: etcd:2379
+      # MinIO 配置（使用你已有的 minio 服务）
+      MINIO_ADDRESS: minio-server:9000
+      MINIO_ACCESS_KEY_ID: admin
+      MINIO_SECRET_ACCESS_KEY: 12345678
+      MINIO_USE_SSL: "false"
+      MINIO_BUCKET_NAME: milvus-bucket
+      # Milvus 自身配置
+      TZ: Asia/Shanghai
+      # 使用 Standalone 模式
+      STANDALONE_ENABLED: "true"
+    ports:
+      - "19530:19530"   # Milvus 客户端连接端口
+      - "9091:9091"     # Milvus WebUI 和管理端口
+    volumes:
+      - milvus_data:/var/lib/milvus
+    command: ["milvus", "run", "standalone"]
+    networks:
+      - common-app-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 90s
+
 volumes:
   mysql_data:
   redis_data:
-  es_data:
-  rabbitmq_data:
-  zookeeper_data:
-  zookeeper_log:
-  kafka_data:
-  gaussdb_data:
+  # es_data:
+  # rabbitmq_data:
+  # zookeeper_data:
+  # zookeeper_log:
+  # kafka_data:
+  # gaussdb_data:
   minio-data:
-  mongo_data:
+  # mongo_data:
   chroma_data:
+  etcd_data:
+  milvus_data:
 
 networks:
   common-app-net:
