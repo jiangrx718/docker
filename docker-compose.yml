@@ -246,6 +246,25 @@ services:
     networks:
       - common-app-net
 
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: chroma-eino
+    restart: always
+    ports:
+      - "8000:8000"
+    volumes:
+      - chroma_data:/chroma/chroma  # 使用命名卷，不再写~/路径
+    environment:
+      TZ: Asia/Shanghai
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8000/api/v1/heartbeat || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    networks:
+      - common-app-net
+
 volumes:
   mysql_data:
   redis_data:
@@ -257,6 +276,7 @@ volumes:
   gaussdb_data:
   minio-data:
   mongo_data:
+  chroma_data:
 
 networks:
   common-app-net:
